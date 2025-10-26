@@ -1,0 +1,25 @@
+
+# 1. SECRETS / ENV FILES 
+# -----------------
+.env
+.env.*.local
+.DS_Store
+
+# -----------------
+# 2. BACKEND EXCLUSIONS (Node.js/TypeScript)
+# -----------------
+/backend/node_modules
+/backend/dist
+/backend/*.log
+
+# -----------------
+# 3. FRONTEND EXCLUSIONS 
+# -----------------
+/frontend/node_modules
+/frontend/dist
+/frontend/dist-ssr
+
+# Docker Volumes/Logs
+mongo-data
+*.log
+npm-debug.log*

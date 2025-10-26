@@ -1,0 +1,57 @@
+services:
+  # 1. MongoDB Database Service
+  mongo:
+    image: mongo:latest
+    container_name: smart-home-mongo
+    restart: always
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB}
+    ports:
+      - "27017:27017"
+    networks:
+      - smart-home-network
+
+  # 2. Backend API Service
+  backend:
+    build:
+      context: ./backend 
+      dockerfile: DockerFile
+    container_name: smart-home-backend
+    restart: always
+    environment:
+      PORT: 3001
+      MONGO_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/${MONGO_DB}?authSource=admin
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mongo 
+    networks:
+      - smart-home-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: DockerFile
+    container_name: smart-home-frontend
+    restart: always
+    environment:
+
+      REACT_APP_API_URL: http://localhost:3001/api/v1 
+      REACT_APP_WS_URL: ws://localhost:3001
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - smart-home-network
+
+networks:
+  smart-home-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
