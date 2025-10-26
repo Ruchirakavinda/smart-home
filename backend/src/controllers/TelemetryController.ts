@@ -79,3 +79,63 @@ export const getHealthStatus = (req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
   });
 };
+
+// GET /telemetry/summary
+
+export const getTelemetrySummary = async (req: Request, res: Response) => {
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    //  Calculate Today's Usage  and Highest Peak Load  ---
+    // aggregates data from the last 24 hours.
+    const usageResult = await TelemetryReading.aggregate([
+      {
+        $match: {
+          timestamp: { $gte: twentyFourHoursAgo }, // Filter for last 24 hours
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalUsageWh: { $sum: "$reading" },
+          highestReading: { $max: "$reading" },
+        },
+      },
+    ]);
+
+    const totalUsage = usageResult[0]
+      ? (usageResult[0].totalUsageWh / 1000).toFixed(2) // Convert Wh to kWh
+      : "0.00";
+
+    const highestReading = usageResult[0]
+      ? usageResult[0].highestReading.toFixed(1)
+      : "0.0";
+
+    // Get Device Status (Online/Total) ---
+    const onlineDevices = await DeviceMetadata.countDocuments({
+      status: "online", // Simple status check
+      lastReported: { $gte: new Date(Date.now() - 5 * 60 * 1000) }, // Active in the last 5 minutes
+    });
+
+    const totalDevices = await DeviceMetadata.countDocuments({});
+
+    //Construct Final Response ---
+    res.status(200).json({
+      totalUsage: totalUsage, // kWh
+      onlineDevices: onlineDevices,
+      totalDevices: totalDevices,
+      highestReading: highestReading, // W
+      unit: {
+        totalUsage: "kWh",
+        highestReading: "W",
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Error calculating summary metrics:", error);
+    res.status(500).json({
+      message: "Failed to calculate summary metrics",
+      error: (error as Error).message,
+    });
+  }
+};
