@@ -6,41 +6,64 @@ import React, {
   useRef,
 } from "react";
 
+interface UnitState {
+  totalUsage: string;
+
+  highestReading: string;
+}
+
 interface MetricsState {
   totalUsage: string | null;
+
   onlineDevices: number | null;
+
   totalDevices: number | null;
+
   highestReading: string | null;
 }
 
 interface TelemetryApiResponse {
   totalUsage: string;
+
   onlineDevices: number;
+
   totalDevices: number;
+
   highestReading: string;
+
+  unit: UnitState;
 }
 
 interface MetricCardProps {
   title: string;
+
   value: string;
+
   unit: string;
 
   icon: (props: { className: string }) => React.ReactElement;
+
   iconBgColor: string;
+
   iconColor: string;
+
   cardBorderColor?: string;
+
   badgeContent?: React.ReactNode;
 }
 
 type WsStatus = "connecting" | "open" | "closed" | "error";
+
 type ApiStatus = "checking" | "online" | "offline";
 
-const BACKEND_URL = "http://localhost:3001";
-const HEALTH_API_PATH = "/health";
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
-const AGGREGATE_API_PATH = "/telemetry/summary";
+const HEALTH_API_URL = BACKEND_BASE_URL + import.meta.env.VITE_HEALTH_API_PATH;
 
-const WS_URL = "ws://localhost:3001/ws/telemetry";
+const AGGREGATE_API_URL =
+  BACKEND_BASE_URL + import.meta.env.VITE_AGGREGATE_API_PATH;
+
+const WS_URL = import.meta.env.VITE_WS_URL;
 
 const GroupIcon = ({ className }: { className: string }) => (
   <svg
@@ -57,6 +80,7 @@ const GroupIcon = ({ className }: { className: string }) => (
     />
   </svg>
 );
+
 const BoxIconLine = ({ className }: { className: string }) => (
   <svg
     className={className}
@@ -75,14 +99,19 @@ const BoxIconLine = ({ className }: { className: string }) => (
 
 const Badge = ({
   children,
+
   color = "success",
 }: {
   children: React.ReactNode;
+
   color: "success" | "warning" | "error" | "primary";
 }) => {
   let style = "bg-green-100 text-green-700";
+
   if (color === "error") style = "bg-red-100 text-red-700";
+
   if (color === "warning") style = "bg-yellow-100 text-yellow-700";
+
   if (color === "primary") style = "bg-indigo-100 text-indigo-700";
 
   return (
@@ -96,14 +125,19 @@ const Badge = ({
 
 const Badge2 = ({
   children,
+
   color = "success",
 }: {
   children: React.ReactNode;
+
   color: "success" | "warning" | "error" | "primary";
 }) => {
   let style = "bg-green-100 text-green-700 border-2 border-green-300";
+
   if (color === "error") style = "bg-red-100 text-red-700";
+
   if (color === "warning") style = "bg-yellow-100 text-yellow-700";
+
   if (color === "primary") style = "bg-indigo-100 text-indigo-700";
 
   return (
@@ -117,15 +151,19 @@ const Badge2 = ({
 
 const useWebSocket = (url: string) => {
   const [lastMessage, setLastMessage] = useState<string | null>(null);
+
   const [wsStatus, setWsStatus] = useState<WsStatus>("connecting");
+
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     const ws = new WebSocket(url);
+
     wsRef.current = ws;
 
     ws.onopen = () => {
       setWsStatus("open");
+
       console.log("WebSocket connection opened.");
     };
 
@@ -135,11 +173,13 @@ const useWebSocket = (url: string) => {
 
     ws.onerror = () => {
       console.error("WebSocket error occurred.");
+
       setWsStatus("error");
     };
 
     ws.onclose = () => {
       console.log("WebSocket connection closed.");
+
       setWsStatus("closed");
 
       setTimeout(() => {
@@ -155,6 +195,7 @@ const useWebSocket = (url: string) => {
       if (wsRef.current) {
         wsRef.current.close();
       }
+
       setWsStatus("closed");
     };
   }, [url]);
@@ -162,12 +203,13 @@ const useWebSocket = (url: string) => {
   return { lastMessage, wsStatus };
 };
 
-const useApiHealth = (url: string, path: string) => {
+const useApiHealth = (fullUrl: string) => {
   const [apiStatus, setApiStatus] = useState<ApiStatus>("checking");
 
   const checkHealth = useCallback(async () => {
     try {
-      const response = await fetch(`${url}${path}`);
+      const response = await fetch(fullUrl);
+
       if (response.ok) {
         setApiStatus("online");
       } else {
@@ -175,29 +217,37 @@ const useApiHealth = (url: string, path: string) => {
       }
     } catch (error) {
       setApiStatus("offline");
+
       console.error("API Health Check Failed:", error);
     }
-  }, [url, path]);
+  }, [fullUrl]);
 
   useEffect(() => {
     checkHealth();
 
     const interval = setInterval(checkHealth, 30000);
+
     return () => clearInterval(interval);
   }, [checkHealth]);
 
   return { apiStatus };
 };
 
-// --- Metric Card Component
 const MetricCard: React.FC<MetricCardProps> = ({
   title,
+
   value,
+
   unit,
+
   icon: Icon,
+
   iconBgColor,
+
   iconColor,
+
   badgeContent,
+
   cardBorderColor = "border-gray-200",
 }) => {
   const isLoading = value === "--";
@@ -211,17 +261,20 @@ const MetricCard: React.FC<MetricCardProps> = ({
       >
         <Icon className={`${iconColor} size-6 dark:text-white/90`} />
       </div>
+
       <div className="flex items-end justify-between mt-5">
         <div>
           <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
             {title}
           </span>
+
           <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90 text-2xl">
             {isLoading && title !== "Current Power Draw" ? (
               <div className="h-7 w-24 bg-gray-200 animate-pulse rounded my-1"></div>
             ) : (
               <>
                 {value}
+
                 {unit && (
                   <span className="ml-1 text-base font-normal text-gray-500">
                     {unit}
@@ -231,6 +284,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
             )}
           </h4>
         </div>
+
         {badgeContent}
       </div>
     </div>
@@ -239,22 +293,32 @@ const MetricCard: React.FC<MetricCardProps> = ({
 
 export default function TelemetryMetrics() {
   const [currentPower, setCurrentPower] = useState<number | null>(null);
+
   const { lastMessage, wsStatus } = useWebSocket(WS_URL);
 
-  const { apiStatus } = useApiHealth(BACKEND_URL, HEALTH_API_PATH);
+  const { apiStatus } = useApiHealth(HEALTH_API_URL);
 
   const [metrics, setMetrics] = useState<MetricsState>({
     totalUsage: null,
+
     onlineDevices: null,
+
     totalDevices: null,
+
     highestReading: null,
   });
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const [units, setUnits] = useState<UnitState>({
+    totalUsage: "kWh",
+
+    highestReading: "W",
+  });
 
   useEffect(() => {
     if (lastMessage) {
       try {
         const data: { reading?: number } = JSON.parse(lastMessage);
+
         if (data.reading !== undefined) {
           setCurrentPower(data.reading);
         }
@@ -265,35 +329,48 @@ export default function TelemetryMetrics() {
   }, [lastMessage]);
 
   const fetchAggregateMetrics = useCallback(async () => {
-    setIsLoading(true);
-    const apiUrl = `${BACKEND_URL}${AGGREGATE_API_PATH}`;
+    const apiUrl = AGGREGATE_API_URL;
 
     try {
       const response = await fetch(apiUrl);
+
       if (!response.ok) throw new Error("Network response was not ok");
+
       const data: TelemetryApiResponse = await response.json();
 
       setMetrics({
-        ...data,
         totalUsage: parseFloat(data.totalUsage).toFixed(2),
+
+        onlineDevices: data.onlineDevices,
+
+        totalDevices: data.totalDevices,
+
         highestReading: parseFloat(data.highestReading).toFixed(1),
       });
+
+      setUnits(data.unit);
     } catch (error) {
       console.error("Failed to fetch aggregate metrics:", error);
+
       setMetrics({
         totalUsage: "--",
+
         onlineDevices: 0,
+
         totalDevices: 0,
+
         highestReading: "--",
       });
-    } finally {
-      setIsLoading(false);
+
+      setUnits({ totalUsage: "kWh", highestReading: "W" });
     }
   }, []);
 
   useEffect(() => {
     fetchAggregateMetrics();
+
     const interval = setInterval(fetchAggregateMetrics, 60000);
+
     return () => clearInterval(interval);
   }, [fetchAggregateMetrics]);
 
@@ -342,20 +419,27 @@ export default function TelemetryMetrics() {
   const devicesValue: string = `${
     metrics.onlineDevices !== null ? metrics.onlineDevices : "--"
   } / ${metrics.totalDevices !== null ? metrics.totalDevices : "--"}`;
+
   const powerValue: string =
     currentPower !== null ? currentPower.toFixed(2) : "--";
+
   const usageValue: string =
     metrics.totalUsage !== null ? metrics.totalUsage : "--";
+
   const peakValue: string =
     metrics.highestReading !== null ? metrics.highestReading : "--";
 
   return (
-    <div>
-      <div className="flex flex-col gap-5 mb-10 sm:flex-row sm:justify-between">
+    <div className=" bg-gray-50 dark:bg-gray-900 mb-10 font-sans">
+      <div className="flex flex-col gap-5 mb-6 sm:flex-row sm:justify-between">
         <div className="w-full">
-          <h3 className="text-2xl font-semibold text-gray-800 dark:text-white/90">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center">
             Real-Time Energy Dashboard <HealthStatusBadge />
           </h3>
+
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Monitor live usage and aggregate statistics.
+          </p>
         </div>
       </div>
 
@@ -363,7 +447,7 @@ export default function TelemetryMetrics() {
         <MetricCard
           title="Current Power Draw"
           value={powerValue}
-          unit="W"
+          unit={units.highestReading}
           icon={BoxIconLine}
           iconBgColor="bg-indigo-100 dark:bg-indigo-800"
           iconColor="text-indigo-600"
@@ -384,7 +468,7 @@ export default function TelemetryMetrics() {
         <MetricCard
           title="Today's Usage"
           value={usageValue}
-          unit="kWh"
+          unit={units.totalUsage}
           icon={BoxIconLine}
           iconBgColor="bg-green-100 dark:bg-green-800"
           iconColor="text-green-600"
@@ -393,7 +477,7 @@ export default function TelemetryMetrics() {
         <MetricCard
           title="Highest Peak Load"
           value={peakValue}
-          unit="W"
+          unit={units.highestReading}
           icon={BoxIconLine}
           iconBgColor="bg-yellow-100 dark:bg-yellow-800"
           iconColor="text-yellow-600"

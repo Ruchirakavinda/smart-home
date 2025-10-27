@@ -1,8 +1,10 @@
 // backend/src/routes.ts
 import { Router } from "express";
 import {
+  getEnergyTrends,
   getHealthStatus,
   getTelemetrySummary,
+  getUsageBreakdown,
   ingestTelemetry,
 } from "./controllers/TelemetryController";
 
@@ -12,8 +14,14 @@ const router = Router();
 router.get("/health", getHealthStatus);
 
 // CORE TELEMETRY INGESTION
-router.post("/api/v1/devices/ingest", ingestTelemetry);
+router.post("/devices/ingest", ingestTelemetry);
 
-// 2. Key Metrics Summary 
+// Key Metrics Summary 
 router.get('/telemetry/summary', getTelemetrySummary);
 export default router;
+
+//  Telemetry Trends 
+router.get('/telemetry/trends/total', getEnergyTrends);
+
+// Usage Breakdown
+router.get('/telemetry/breakdown', getUsageBreakdown);
