@@ -18,6 +18,8 @@ import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
+import TelemetryReadings from "./pages/TelemetryReadings/TelemetryReadings";
+import Devices from "./pages/Devices/DeviceList";
 
 export default function App() {
   return (
@@ -28,7 +30,8 @@ export default function App() {
           {/* Dashboard Layout */}
           <Route element={<AppLayout />}>
             <Route index path="/" element={<Home />} />
-
+            <Route path="/devices" element={<Devices />} />
+            <Route path="/telemetry-readings" element={<TelemetryReadings />} />
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
             <Route path="/calendar" element={<Calendar />} />

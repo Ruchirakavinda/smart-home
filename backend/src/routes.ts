@@ -1,8 +1,10 @@
 // backend/src/routes.ts
 import { Router } from "express";
 import {
+  getDeviceList,
   getEnergyTrends,
   getHealthStatus,
+  getTelemetryReadings,
   getTelemetrySummary,
   getUsageBreakdown,
   ingestTelemetry,
@@ -25,3 +27,9 @@ router.get('/telemetry/trends/total', getEnergyTrends);
 
 // Usage Breakdown
 router.get('/telemetry/breakdown', getUsageBreakdown);
+
+// Devices List
+router.get('/telemetry/metadata/devices', getDeviceList);
+
+// Get telemetry readings
+router.get('/telemetry/readings', getTelemetryReadings);
