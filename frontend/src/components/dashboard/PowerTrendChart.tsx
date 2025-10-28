@@ -28,21 +28,37 @@ const WINDOW_OPTIONS: { key: string; label: string }[] = [
 ];
 
 const formatCategoryLabel = (isoString: string, window: string): string => {
+  // Ensure we always have a valid date string
+  let dateStr = isoString;
+
+  // Fix cases like "2025-10-28T0" → "2025-10-28T00:00:00"
+  if (/^(\d{4}-\d{2}-\d{2}T\d{1,2})$/.test(isoString)) {
+    const [d, h] = isoString.split("T");
+    const hour = h.padStart(2, "0");
+    dateStr = `${d}T${hour}:00:00`;
+  }
+
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) {
+    // fallback: if still invalid, show as-is
+    return isoString;
+  }
+
   if (window === "24h") {
-    const [datePart, hourPart] = isoString.split("T");
-    const day = datePart.split("-")[2];
-    const hour = hourPart;
+    const day = date.getDate().toString().padStart(2, "0");
+    const hour = date.getHours().toString().padStart(2, "0");
     return `${day}/${hour}h`;
   }
 
   if (window === "7d") {
-    const [datePart] = isoString.split("T");
-    const [month, day] = datePart.split("-");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
     return `${month}/${day}`;
   }
 
   return isoString;
 };
+
 
 interface DropdownProps {
   children: React.ReactNode;
