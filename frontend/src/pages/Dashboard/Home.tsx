@@ -1,6 +1,5 @@
 import EcommerceMetrics from "../../components/dashboard/TelemetryMetrics";
 import MonthlySalesChart from "../../components/dashboard/PowerTrendChart";
-import RecentOrders from "../../components/dashboard/RecentOrders";
 import PageMeta from "../../components/common/PageMeta";
 import UsageBreakdownChart from "../../components/dashboard/UsageBreakdownChart";
 import RecentTelemetryReadingTable from "../../components/telemetry-readings/RecentTelemetryReadingTable";

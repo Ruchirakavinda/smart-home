@@ -121,7 +121,7 @@ export default function UserDropdown() {
         const data = await res.json();
 
         if (!res.ok) {
-          // Backend returned an error
+     
           let detailedErrors = "";
           if (data.errors && Array.isArray(data.errors)) {
             detailedErrors = data.errors
@@ -138,13 +138,13 @@ export default function UserDropdown() {
           return;
         }
 
-        // Success
+   
         setStatus({
           type: "success",
           message: `${data.message} (${data.count} readings saved)`,
         });
 
-        // Optionally reset the form after showing success
+       
         resetForm({
           values: { data: [] },
           status: {
@@ -152,11 +152,12 @@ export default function UserDropdown() {
             message: `${data.message} (${data.count} readings saved)`,
           },
         });
-
-        // Close modal after 1.5s so user can see message
-        setTimeout(() => closeModal(), 2500);
+       
+        setTimeout(() => {
+          handleCloseModal();
+        }, 2500);
       } catch (err: unknown) {
-        // TypeScript-safe catch
+    
         const errorMessage =
           err instanceof Error ? err.message : "Something went wrong";
 
@@ -237,8 +238,9 @@ export default function UserDropdown() {
       </div>
 
       <Modal
+        showCloseButton={false}
         isOpen={isOpen}
-        onClose={closeModal}
+        onClose={() => handleCloseModal()}
         className="max-w-[800px] m-4 bg-transparent"
       >
         <div className="relative w-full max-h-[90vh] p-4 overflow-y-auto bg-white no-scrollbar rounded-3xl dark:bg-gray-900 lg:p-10">
