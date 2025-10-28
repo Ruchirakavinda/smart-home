@@ -7,7 +7,7 @@
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
     "build": "tsc",
-    "test": "jest"
+    "test": "jest --watchAll"
   },
   "keywords": [],
   "author": "",
@@ -23,10 +23,13 @@
     "@types/cors": "^2.8.19",
     "@types/dotenv": "^8.2.3",
     "@types/express": "^5.0.4",
+    "@types/jest": "^30.0.0",
     "@types/mongoose": "^5.11.97",
     "@types/node": "^24.9.1",
     "@types/ws": "^8.18.1",
+    "jest": "^30.2.0",
     "nodemon": "^3.1.10",
+    "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
