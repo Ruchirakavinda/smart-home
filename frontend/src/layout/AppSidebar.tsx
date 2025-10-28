@@ -3,15 +3,11 @@ import { Link, useLocation } from "react-router";
 
 // Assume these icons are imported from an icon library
 import {
-  BoxCubeIcon,
-  CalenderIcon,
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
   ListIcon,
-  PageIcon,
-  TableIcon,
-  UserCircleIcon,
+  PlugInIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 
@@ -29,7 +25,7 @@ const navItems: NavItem[] = [
     path: "/",
   },
     {
-    icon: <BoxCubeIcon />,
+    icon: <PlugInIcon />,
     name: "Devices",
     path: "/devices",
   },
@@ -38,34 +34,8 @@ const navItems: NavItem[] = [
     name: "Telemetry Readings",
     path: "/telemetry-readings",
   },
-  {
-    icon: <CalenderIcon />,
-    name: "Calendar",
-    path: "/calendar",
-  },
-  {
-    icon: <UserCircleIcon />,
-    name: "User Profile",
-    path: "/profile",
-  },
-  {
-    name: "Forms",
-    icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  },
-  {
-    name: "Tables",
-    icon: <TableIcon />,
-    subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  },
-  {
-    name: "Pages",
-    icon: <PageIcon />,
-    subItems: [
-      { name: "Blank Page", path: "/blank", pro: false },
-      { name: "404 Error", path: "/error-404", pro: false },
-    ],
-  },
+   
+  
 ];
 
 
@@ -261,22 +231,23 @@ const AppSidebar: React.FC = () => {
       >
         <Link to="/">
           {isExpanded || isHovered || isMobileOpen ? (
-            <>
+            <div className="flex items-center justify-center w-full">
               <img
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
+                src="/images/logo/logo-icon.svg"
                 alt="Logo"
-                width={150}
+                width={40}
                 height={40}
               />
-              <img
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
+              <div>
+              <span className="ml-3 text-2xl font-bold text-gray-800 dark:text-white/90">
+                SmartHome
+              </span>
+              <span className="ml-3 text-xs font-normal text-gray-500 dark:text-gray-400 -mt-1 block">
+                Save Energy Systems Inc.
+              </span>
+              </div>
+            </div>
+            
           ) : (
             <img
               src="/images/logo/logo-icon.svg"
