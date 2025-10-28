@@ -20,7 +20,6 @@ interface ChartState {
 }
 
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL;
-
 const TRENDS_API_PATH = BACKEND_BASE_URL + import.meta.env.VITE_TRENDS_API_PATH;
 
 const WINDOW_OPTIONS: { key: string; label: string }[] = [
@@ -30,30 +29,16 @@ const WINDOW_OPTIONS: { key: string; label: string }[] = [
 
 const formatCategoryLabel = (isoString: string, window: string): string => {
   if (window === "24h") {
-    const hourMatch = isoString.match(/T(\d{2})$/);
-
-    if (hourMatch && hourMatch[1]) {
-      return hourMatch[1];
-    }
-
-    return isoString.split("T")[1] || isoString;
+    const [datePart, hourPart] = isoString.split("T");
+    const day = datePart.split("-")[2];
+    const hour = hourPart;
+    return `${day}/${hour}h`;
   }
 
   if (window === "7d") {
-    try {
-      const dateToParse =
-        isoString.includes("T") && !isoString.endsWith("Z")
-          ? isoString + "Z"
-          : isoString;
-      const date = new Date(dateToParse);
-
-      if (!isNaN(date.getTime())) {
-        return new Intl.DateTimeFormat("en-US", {
-          weekday: "short",
-          timeZone: "UTC",
-        }).format(date);
-      }
-    } catch (e) {}
+    const [datePart] = isoString.split("T");
+    const [month, day] = datePart.split("-");
+    return `${month}/${day}`;
   }
 
   return isoString;
@@ -106,12 +91,14 @@ interface SimpleBarChartProps {
   categories: string[];
   series: { name: string; data: number[] }[];
   unitLabel: string;
+  rotateLabels?: boolean;
 }
 
 const SimpleBarChart: React.FC<SimpleBarChartProps> = ({
   categories,
   series,
   unitLabel,
+  rotateLabels = false,
 }) => {
   const width = 600;
   const height = 180;
@@ -120,7 +107,6 @@ const SimpleBarChart: React.FC<SimpleBarChartProps> = ({
   const innerHeight = height - margin.top - margin.bottom;
 
   const data = series[0]?.data || [];
-
   if (data.length === 0) {
     return (
       <div
@@ -133,7 +119,6 @@ const SimpleBarChart: React.FC<SimpleBarChartProps> = ({
   }
 
   const maxVal = Math.max(...data);
-
   const paddedMaxVal = maxVal * 1.1;
   const scaleY = (d: number) => innerHeight * (d / paddedMaxVal);
   const barWidth = innerWidth / data.length / 1.5;
@@ -151,7 +136,10 @@ const SimpleBarChart: React.FC<SimpleBarChartProps> = ({
   return (
     <div
       className="pt-2"
-      style={{ height: height + margin.top + margin.bottom, overflowX: "auto" }}
+      style={{
+        height: height + margin.top + margin.bottom + 100,
+        overflowX: "auto",
+      }}
     >
       <svg
         viewBox={`0 0 ${width + margin.left + margin.right} ${
@@ -203,7 +191,6 @@ const SimpleBarChart: React.FC<SimpleBarChartProps> = ({
                   fill="#4f46e5"
                   className="transition-all duration-300"
                 />
-
                 <text
                   x={x + barWidth / 2}
                   y={y - 5}
@@ -219,19 +206,25 @@ const SimpleBarChart: React.FC<SimpleBarChartProps> = ({
             );
           })}
 
-          {categories.map((label, i) => (
-            <text
-              key={i}
-              x={i * (barWidth + barGap) + barWidth / 2}
-              y={innerHeight + 15}
-              textAnchor="middle"
-              fontSize="10"
-              fill="#6b7280"
-              className="dark:fill-gray-400 font-inter"
-            >
-              {label}
-            </text>
-          ))}
+          {categories.map((label, i) => {
+            const x = i * (barWidth + barGap) + barWidth / 2;
+            const y = innerHeight + 15;
+
+            return (
+              <text
+                key={i}
+                x={x}
+                y={y}
+                fontSize="8"
+                textAnchor="middle"
+                transform={rotateLabels ? `rotate(-60 ${x},${y})` : undefined}
+                fill="#6b7280"
+                className="dark:fill-gray-400 font-inter"
+              >
+                {label}
+              </text>
+            );
+          })}
 
           <line
             x1={0}
@@ -251,14 +244,14 @@ const initialChartState: ChartState = {
   categories: [],
   series: [{ name: "Loading", data: [] }],
   unitLabel: "N/A",
-  timeWindow: "24h",
+  timeWindow: "7d",
 };
 
 export default function PowerTrendChart() {
   const [chartData, setChartData] = useState<ChartState>(initialChartState);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
-  const [timeWindow, setTimeWindow] = useState<string>("24h");
+  const [timeWindow, setTimeWindow] = useState<string>("7d");
 
   const processData = (apiData: TelemetryTrendsResponse): ChartState => {
     if (!apiData || !apiData.data || apiData.data.length === 0) {
@@ -274,25 +267,16 @@ export default function PowerTrendChart() {
       formatCategoryLabel(item.timeLabel, apiData.window)
     );
 
-    const dataKey: string = "usageKWh";
+    const dataKey: string = apiData.dataKey || "usageKWh";
 
-    const seriesData: number[] = apiData.data.map(
-      (item) => (item[dataKey] as number) || 0
+    const seriesData: number[] = apiData.data.map((item) =>
+      Number(item[dataKey] || 0)
     );
-
-    const series = [
-      {
-        name: `Usage Trend`,
-        data: seriesData,
-      },
-    ];
-
-    const effectiveUnitLabel = "kWh";
 
     return {
       categories,
-      series,
-      unitLabel: effectiveUnitLabel,
+      series: [{ name: "Usage Trend", data: seriesData }],
+      unitLabel: apiData.unit || "kWh",
       timeWindow: apiData.window,
     };
   };
@@ -302,7 +286,6 @@ export default function PowerTrendChart() {
       setIsLoading(true);
 
       const url: string = `${TRENDS_API_PATH}?window=${timeWindow}`;
-
       const maxRetries = 3;
       let attempts = 0;
       let success = false;
@@ -385,7 +368,7 @@ export default function PowerTrendChart() {
         </div>
       </div>
 
-      <div className="max-w-full overflow-x-auto custom-scrollbar">
+      <div className="max-w-full h-100 overflow-x-auto custom-scrollbar">
         {isLoading ? (
           <div style={{ height: requiredChartHeight }}>
             <LoadingSpinner />
@@ -395,6 +378,7 @@ export default function PowerTrendChart() {
             categories={chartData.categories}
             series={chartData.series}
             unitLabel={chartData.unitLabel}
+            rotateLabels={timeWindow === "24h"}
           />
         )}
       </div>

@@ -34,13 +34,23 @@ export default function UserDropdown() {
   const toggleDropdown = () => setIsDOpen(!isDOpen);
   const closeDropdown = () => setIsDOpen(false);
 
+  const toLocalDatetimeInput = (d = new Date()): string => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const year = d.getFullYear();
+    const month = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    return `${year}-${month}-${day}T${hours}:${minutes}`; // e.g. "2025-10-28T07:30"
+  };
+
   const handleCloseModal = () => {
     formik.resetForm({
       values: {
         data: [
           {
             deviceId: "",
-            timestamp: new Date().toISOString(),
+            timestamp: toLocalDatetimeInput(),
             reading: "",
             unit: "W",
             location: "",
@@ -86,7 +96,7 @@ export default function UserDropdown() {
       data: [
         {
           deviceId: "",
-          timestamp: new Date().toISOString(),
+          timestamp: toLocalDatetimeInput(),
           reading: "",
           unit: "W",
           location: "",
@@ -293,21 +303,24 @@ export default function UserDropdown() {
                             <Input
                               type="datetime-local"
                               name={`data.${index}.timestamp`}
-                              value={new Date(item.timestamp)
-                                .toISOString()
-                                .slice(0, 16)}
+                              // ✅ Keep it local — no UTC conversion
+                              value={item.timestamp.slice(0, 16)}
                               onChange={(e) =>
                                 handleChange({
                                   target: {
                                     name: `data.${index}.timestamp`,
-                                    value: new Date(
-                                      e.target.value
-                                    ).toISOString(),
+                                    value: e.target.value, // keep as local time string
                                   },
                                 })
                               }
                               onBlur={handleBlur}
                             />
+                            {touched.data?.[index]?.timestamp &&
+                              (errors.data?.[index] as any)?.timestamp && (
+                                <p className="text-red-500 text-sm mt-1">
+                                  {(errors.data?.[index] as any)?.timestamp}
+                                </p>
+                              )}
                           </div>
 
                           {/* Reading */}
@@ -384,7 +397,7 @@ export default function UserDropdown() {
                       onClick={() =>
                         push({
                           deviceId: "",
-                          timestamp: new Date().toISOString(),
+                          timestamp: toLocalDatetimeInput(),
                           reading: "",
                           unit: "W",
                           location: "",
