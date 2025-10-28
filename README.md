@@ -1,30 +1,30 @@
-## Smart Home Energy Monitor: Event-Driven Telemetry System
+# Smart Home Energy Monitor: Event-Driven Telemetry System
 
-1. Project Overview & Scenario Context
+# 1. Project Overview & Scenario Context
 
-# This project delivers a complete, full-stack system designed to monitor energy consumption from smart home devices (plugs, lights, thermostats). The system handles event-driven telemetry ingestion and provides a near real-time dashboard for visualizing household power usage trends and device-level activity.
+This project delivers a complete system designed to monitor energy consumption from smart home devices (plugs, lights, thermostats). The system handles event-driven telemetry ingestion and provides a near real-time dashboard for visualizing household power usage trends and device-level activity.
 
-The solution is built with production habits in mind, including full containerization, strong TypeScript typing, unit testing for both the backend and frontend, and clear documentation of design trade-offs.
-
-2. Setup and Run Instructions
+# 2. Setup and Run Instructions
 
 The entire system is containerized using Docker Compose, allowing for single-command deployment of the full application stack (Frontend, Backend API, and Database).
 
-Prerequisites
+## Prerequisites
 
 Docker and Docker Compose (or Docker Desktop)
 
 Node.js (for non-Docker development only)
 
-Containerized Setup (Recommended)
+## Containerized Setup 
 
 Environment Variables: Create copies of the provided environment examples in the respective service directories and fill them out with secure values:
 
-Copy backend/.env.example to backend/.env
+Copy ## smart-home/.env.example to ## smart-home/.env
 
-Copy frontend/.env.example to frontend/.env
+Copy ## backend/.env.example to ## backend/.env
 
-Build and Run: Execute the following command from the project root directory:
+Copy ## frontend/.env.example to ## frontend/.env
+
+## Build and Run: Execute the following command from the project root directory:
 
 docker compose up --build
 
@@ -33,172 +33,290 @@ This command will build the frontend and backend images, provision the MongoDB c
 
 Access:
 
-Frontend Dashboard: Available at http://localhost:3000
+Frontend Dashboard: Available at http://localhost:80
 
-Backend API (Health Check): Available at http://localhost:8080/health
+Backend API (ex: Health Check): Available at http://localhost:3001/health
 
-Non-Docker Development Setup (Optional)
+## Local Development / Non-Docker Development
 
-Start Database: Ensure a local or containerized MongoDB instance is running.
+Start Database:
+
+ compose up mongo : MongoDB runs in Docker docker
 
 Backend Setup (./backend):
 
 npm install
-npm run dev  # Starts the Node.js/Express server (http://localhost:8080)
+npm run dev  : Starts the Node.js/Express server (http://localhost:3001)
 
 
 Frontend Setup (./frontend):
 
 npm install
-npm run dev  # Starts the Vite development server (http://localhost:3000)
+npm run dev  : Starts the Vite development server (http://localhost:5173)
 
 
-3. Testing Instructions
+# 3. Testing Instructions
 
-Unit tests are implemented for both the core API logic (Backend) and critical data-handling components (Frontend).
+Unit tests are implemented for both the Backend and Frontend.
 
-Backend Testing (Node.js/Jest)
-
-Tests cover API ingestion and query logic (success and failure paths).
+## Backend Testing (Node.js/Jest)
 
 cd backend
 npm test
 
 
-Frontend Testing (React/Vitest)
-
-Tests cover components responsible for fetching data and managing display state.
+## Frontend Testing (React/Jest)
 
 cd frontend
 npm test
 
 
-4. API Reference (Minimal Surface)
+# 4. API Reference 
 
-The backend API is implemented using Node.js/Express.
+The backend API is implemented using Node.js with TypeScript.
 
-Endpoint: GET /health
+## Endpoint - GET: http://localhost:3001/health
 
 Description: Liveness check for operational monitoring.
 
 Response Summary: 200 OK
 
-Endpoint: POST /api/v1/devices/ingest
+## Endpoint - POST:  http://localhost:3001/devices/ingest
 
 Description: Accepts single or batched telemetry readings for persistence.
 
-Request Summary: JSON array of readings.
+Request Body :
+[
+{
+  "deviceId": "plug-kitchen-20",
+  "timestamp": "2025-10-26T14:30:00.000Z",
+  "reading": 155.75,
+  "location": "Kitchen",
+  "deviceType": "smart_plug"
+},
+{...}
+]
 
-Response Summary: 201 Created with summary of successful/failed ingests.
+Request Summary:
+{
+    "message": "Telemetry accepted and processed.",
+    "count": 1
+}
 
-Endpoint: GET /api/v1/devices/readings
+
+
+## Endpoint - GET : http://localhost:3001/telemetry/readings
+
+example query params : 
+page=1
+limit=20
+search=plug
+startTimestamp=2025-10-07T00:09:42.000Z
+endTimestamp=2025-10-14T00:09:44.000Z
 
 Description: Queries stored telemetry data with basic filtering and pagination.
 
-Query Params: deviceId, startTime, endTime, limit, page.
-
 Response Summary: JSON array of readings and pagination metadata.
 
-Endpoint: GET /api/v1/devices/metrics
+{
+    "status": "success",
+    "data": {
+        "readings": [
+            {
+                "_id": "690102718135293faa225a44",
+                "deviceId": "plug-room-6",
+                "timestamp": "2025-10-28T23:20:00.000Z",
+                "reading": 105,
+                "unit": "W",
+                "location": "Guest Bed Room 2",
+                "deviceType": "smart_plug",
+                "__v": 0
+            },
+        ],
+        "pagination": {
+            "currentPage": 1,
+            "totalPages": 7,
+            "totalReadings": 126,
+            "limit": 20
+        }
+    }
 
-Description: Calculates and returns aggregated metrics (e.g., total energy usage trend).
+## Endpoint - GET : http://localhost:3001/telemetry/summary
 
-Query Params: duration (e.g., '1h', '24h').
+Description: Calculates and returns aggregated summery 
 
-Response Summary: JSON object with aggregated metrics.
+Response Summary: JSON object with aggregated summery (e.g., Active Devices, Today's Usage, Highest Peak Load).
 
-5. Architecture Notes & Key Decisions
+{
+    "totalUsage": "40214.57",
+    "onlineDevices": 1,
+    "totalDevices": 20,
+    "highestReading": "20056464.0",
+    "unit": {
+        "totalUsage": "kWh",
+        "highestReading": "W"
+    },
+    "timestamp": "2025-10-28T18:49:36.854Z"
+}
 
-High-Level Design and Data Flow
+## Endpoint - GET : http://localhost:3001/telemetry/trends/total
+
+Query Params: window= (7d or 24h)
+
+Description: Calculates Energy Usage Trend (Last 7 Days or last 24 hours)
+
+Response Summary: JSON object with Calculated Energy Usage Trend for Bar Chart.
+
+{
+    "window": "7d",
+    "unit": "kWh",
+    "dataKey": "usageKWh",
+    "granularity": "day",
+    "data": [
+        {
+            "timeLabel": "2025-10-25",
+            "usageKWh": 0.3415
+        },
+        {
+            "timeLabel": "2025-10-26",
+            "usageKWh": 89.24925
+        },    ]
+}
+
+
+## Endpoint - GET : http://localhost:3001/telemetry/breakdown
+
+Query Params: by= (category or location)
+
+Description: Energy Usage Breakdown (By Location or Category)
+
+Response Summary: JSON object with Calculated Energy Usage Breakdown for Breakdown chart.
+{
+    "groupBy": "location",
+    "unit": "kWh",
+    "data": [
+        {
+            "name": "Bed Room",
+            "value": 40214.259
+        },
+        {
+            "name": "Guest Bed Room 2",
+            "value": 0.105
+        },
+    ]
+}
+
+
+## Endpoint - GET : http://localhost:3001/telemetry/metadata/devices
+
+example query params : 
+page=1
+limit=20
+search=smart
+
+Description: All Devices Metadata
+
+Response Summary: JSON object with all devices metadata.
+{
+    "status": "success",
+    "data": {
+        "devices": [
+            {
+                "deviceId": "plug-room-6",
+                "location": "Guest Bed Room 2",
+                "deviceType": "smart_plug",
+                "status": "online",
+                "lastReported": "2025-10-28T23:20:00.000Z"
+            },
+        ],
+        "pagination": {
+            "currentPage": 1,
+            "totalPages": 2,
+            "totalDevices": 20,
+            "limit": 10
+        }
+    }
+}
+
+
+# 5. Architecture Notes & Key Decisions
+
+## High-Level Design and Data Flow
 
 The system uses a classic Three-Tier Architecture centered around high I/O throughput:
 
-Client (React/TypeScript): Visualization tier, uses client-side polling to retrieve updates.
+Client (React/TypeScript): Visualization tier, uses WebSocket to retrieve real-time updates. (Current Power Draw , Recent/All Telemetry Readings). And Meaning full Charts and metrics.
 
-API/Application (Node.js/Express/TypeScript): Handles routing, request validation, business logic, and interaction with the database.
+API/Application (Node.js/TypeScript): Handles routing, request validation, business logic, and interaction with the database and client.
 
 Data Layer (MongoDB): Durable and flexible storage for raw telemetry readings.
 
-Data Flow Summary: Device (POST) → API Validation → Persistence (MongoDB) → Frontend Polling → API Aggregation → Frontend Rendering.
+## Data Flow Summary: Device (POST) → API Validation → Persistence (MongoDB) → API Aggregation → Frontend Rendering.
 
-Key Decisions and Trade-Offs
+## Key Decisions and Trade-Offs
 
-Decision 1: Database - MongoDB (NoSQL)
+## Decision 1: Database - MongoDB (NoSQL)
 
-Justification: Best suited for heterogeneous, time-series telemetry data where the schema is likely to evolve quickly (e.g., a new device sends a new metric).
+Justification: Best suited for diverse, time-series telemetry data where the schema is likely to evolve quickly (e.g., a new device sends a new metric).
 
 Trade-Off: Reduced transactional integrity compared to PostgreSQL; aggregation can be resource-intensive without proper indexing.
 
-Decision 2: Backend - Node.js/Express
+## Decision 2: Backend - Node.js/Express
 
 Justification: Provides high-performance, non-blocking I/O, crucial for a high-volume data ingestion API. Express is minimalist, preventing excessive boilerplate.
 
 Trade-Off: Requires more manual implementation of common features (e.g., strong validation, caching) compared to an opinionated full-stack framework.
 
-Decision 3: Real-Time Updates - Polling
+## Decision 3: Real-Time Updates - WebSockets (Socket.IO)
+ustification: Provides a low-latency, event-driven push mechanism for instant dashboard updates. This is crucial for a real-time monitoring application and avoids the inefficiency of client-side polling.
 
-Justification: Minimal Viable Product (MVP) choice. Quick to implement and satisfies the functional requirement for UI updates.
+Trade-Off: Increases complexity in backend connection management and requires persistent connections, which consume slightly more server resources than simple stateless HTTP polling.
 
-Trade-Off: Inefficient and high-latency. This must be replaced with a push mechanism (WebSockets) for production use.
 
-Decision 4: Frontend Testing - Vitest
+## Environment Variables and Security
 
-Justification: Superior integration and significantly faster test execution times within the Vite build environment compared to a standard Jest setup.
+Configuration is strictly separated using .env files for each service. All database credentials and sensitive paths are managed through these files and are kept outside the code base. Internal communication relies on Docker's built-in networking.
 
-Trade-Off: Requires specific configuration setup in the Vite environment.
+# 6. Assumptions and Limitations
 
-Environment Variables and Security
-
-Configuration is strictly separated using .env files for each service. All database credentials and sensitive paths are managed through these files and are kept outside the code base. Internal communication relies on Docker's built-in networking for service name resolution.
-
-6. Assumptions and Limitations
-
-All Assumptions Made During Implementation
+## All Assumptions Made During Implementation
 
 Backend Framework: Express.js was chosen to minimize boilerplate and focus on core API logic.
 
 Telemetry Model: All device data is modeled under a unified Telemetry collection/schema in MongoDB, using fields like deviceType and readingType for internal differentiation.
 
-Timezone Standard: All timestamps (timestamp, startTime, endTime) are assumed to be handled in UTC internally to prevent timezone ambiguity.
+Validation: Basic validation (type checking, presence of mandatory fields) is implemented in the API and used Formik Validation for frontend Form Validations
 
-Validation: Basic validation (type checking, presence of mandatory fields) is implemented in the API.
-
-Known Limitations
-
-Real-Time Updates: Real-time functionality is currently implemented using basic client-side polling (every ~5 seconds).
+## Known Limitations
+Data Ingestion Source: For simplicity, testing, and ease of demonstration, telemetry data is currently entered and submitted via a frontend form. In a real-life scenario, this data would be directly injected/streamed from physical smart devices using a suitable tech directly calling the ingestion API.
 
 Authentication: No user authentication or authorization is implemented. The API is openly accessible within the Docker network.
 
 Rate Limiting: No API rate limiting is applied to the ingestion or query endpoints, which would be essential for preventing abuse in a public deployment.
 
-Error Persistence: Telemetry records that fail validation are currently discarded, with only a count of failures returned.
 
-7. Project TODOs and Future Improvements
+# 7. Project TODOs and Future Improvements
 
-MUST (Priority 1: Required for Production Readiness)
+## MUST 
 
-[MUST] WebSockets Implementation: Replace the polling mechanism with a WebSocket (e.g., Socket.IO) connection for true real-time data push from the backend.
+[MUST] Data Ingestion Source: telemetry data would be directly injected/streamed from physical smart devices using a suitable tech directly calling the ingestion API.
 
-[MUST] Ingestion Failure Handling: Implement a Dead-Letter Queue (DLQ) to store and retry telemetry records that fail validation or persistence.
+[MUST] Ingestion Failure Handling: Implement a way to store and retry telemetry records that fail validation or persistence.
 
 [MUST] Detailed Logging: Enhance logging to include detailed request payloads, error stack traces, and database query timings for troubleshooting.
 
 [MUST] Pagination Sanity Checks: Add strict validation for page and limit query parameters.
 
-SHOULD (Priority 2: Major Feature Improvements)
+## SHOULD 
 
-[SHOULD] User Authentication: Implement basic user login (e.g., JWT) to secure API endpoints.
+[SHOULD] User Authentication: Implement basic user login to secure API endpoints.
 
-[SHOULD] Device Configuration Service: Add a new API to manage device metadata (e.g., room, capacity, last maintenance).
+[SHOULD] Device Configuration Service: Add a new API to manage device metadata (e.g., capacity, last maintenance).
 
-[SHOULD] Optimized Metrics Query: Refactor metric aggregation queries to leverage MongoDB's time-series capabilities or use a dedicated time-series solution for performance.
+[SHOULD] Optimized Metrics Query: Refactor metric aggregation queries to leverage DB's time-series capabilities or use a dedicated time-series solution for performance.
 
-[SHOULD] Filtering on Frontend: Add a date/time range picker to the dashboard UI for flexible querying.
-
-NICE-TO-HAVE (Priority 3: Polish and Future Work)
+## NICE-TO-HAVE 
 
 [NICE-TO-HAVE] Advanced Charting: Implement complex visualizations such as device comparison charts and moving averages.
 
-[NICE-TO-HAVE] API Documentation (Swagger): Integrate an OpenAPI/Swagger tool into the backend for automatically generated documentation.
-
-[NICE-TO-HAVE] Theming/Dark Mode: Implement a toggle switch in the React frontend.
+[NICE-TO-HAVE] API Documentation (Swagger): Integrate an API Documentation tool into the backend for automatically generated documentation.
