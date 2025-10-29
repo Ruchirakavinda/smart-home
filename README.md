@@ -290,6 +290,8 @@ Validation: Basic validation (type checking, presence of mandatory fields) is im
 ## Known Limitations
 Data Ingestion Source: For simplicity, testing, and ease of demonstration, telemetry data is currently entered and submitted via a frontend form. In a real-life scenario, this data would be directly injected/streamed from physical smart devices using a suitable tech directly calling the ingestion API.
 
+Power Measurement Unit: The system currently relies exclusively on Watts (W) as the unit for power readings. Support for other relevant units (e.g., kWh for billing, Volts, Amps) is not yet implemented.
+
 Authentication: No user authentication or authorization is implemented. The API is openly accessible within the Docker network.
 
 Rate Limiting: No API rate limiting is applied to the ingestion or query endpoints, which would be essential for preventing abuse in a public deployment.
@@ -308,6 +310,8 @@ Rate Limiting: No API rate limiting is applied to the ingestion or query endpoin
 [MUST] Pagination Sanity Checks: Add strict validation for page and limit query parameters.
 
 ## SHOULD 
+
+[SHOULD] Extend Measurement Units: Update the API and database schema to support and validate multiple power/energy measurement units (e.g., kWh, Volts).
 
 [SHOULD] User Authentication: Implement basic user login to secure API endpoints.
 
